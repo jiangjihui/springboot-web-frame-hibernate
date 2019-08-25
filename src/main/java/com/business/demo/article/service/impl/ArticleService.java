@@ -1,21 +1,18 @@
 package com.business.demo.article.service.impl;
 
-import com.common.util.PojoUtils;
-import com.common.web.form.PageRequestForm;
 import com.business.demo.article.dao.ArticleMapper;
-import com.common.exception.BusinessException;
 import com.business.demo.article.model.Article;
 import com.business.demo.article.service.IArticleService;
+import com.common.exception.BusinessException;
+import com.common.service.BaseService;
+import com.common.util.PojoUtils;
+import com.common.web.form.PageRequestForm;
 import com.common.web.form.SimpleForm;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
-import java.util.Optional;
 
 /**
  * 文章 服务层实现
@@ -26,7 +23,7 @@ public class ArticleService implements IArticleService {
     @Autowired
     private ArticleMapper articleMapper;
     @Autowired
-    private SessionFactory sessionFactory;
+    private BaseService baseService;
 
     /**
      * 获取列表
@@ -48,8 +45,7 @@ public class ArticleService implements IArticleService {
         if (StringUtils.isEmpty(article.getTitle())) {
             throw new BusinessException("标题不能为空");
         }
-        Session session = sessionFactory.getCurrentSession();
-        session.save(article);
+        baseService.save(article);
     }
 
     /**
@@ -59,12 +55,12 @@ public class ArticleService implements IArticleService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void update(Article article) {
-        Article entity = articleMapper.findById(article.getId()).get();
+        Article entity = baseService.byId(Article.class,article.getId());
         if (entity == null) {
             throw new BusinessException("未找到待更新的对象");
         }
         PojoUtils.copyPropertiesIgnoreNull(article,entity);
-        articleMapper.save(entity);
+        baseService.update(entity);
     }
 
     /**
@@ -77,6 +73,10 @@ public class ArticleService implements IArticleService {
         if (StringUtils.isEmpty(form.getId())) {
             throw new BusinessException("id不能为空");
         }
-        articleMapper.deleteById(form.getId());
+        Article entity = baseService.byId(Article.class,form.getId());
+        if (entity == null) {
+            throw new BusinessException("未找到待删除的对象");
+        }
+        baseService.delete(entity);
     }
 }
